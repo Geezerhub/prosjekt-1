@@ -79,6 +79,12 @@ For å lage et ikon på skrivebordet:
 - **Ingenting skjer når du dobbeltklikker filen**
   - Bruk kommandoene over i terminal i stedet for dobbeltklikk.
 
+- **Appen krasjer ved oppstart pga. lagret datafil**
+  - Ny versjon tåler ødelagt `recipes.json` bedre og viser advarsel. Du kan også slette `recipes.json` i prosjektmappen og starte appen på nytt.
+
+- **Feil ved lagring som .txt/.pdf**
+  - Sjekk at du har skrivetilgang til mappen du prøver å lagre i (for eksempel ikke systemmapper).
+
 ## Tester (valgfritt)
 
 Hvis du vil sjekke at beregningslogikken virker:
