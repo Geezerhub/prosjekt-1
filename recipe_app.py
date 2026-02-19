@@ -7,6 +7,11 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
 from export_utils import write_simple_text_pdf
+import tkinter as tk
+from dataclasses import dataclass, asdict
+from pathlib import Path
+from tkinter import messagebox, ttk
+
 from recipe_logic import IngredientAmount, scale_ingredients
 
 
@@ -90,6 +95,10 @@ class RecipeApp:
         self.store = RecipeStore()
         self.ingredients_buffer: list[Ingredient] = []
         self.editing_original_name: str | None = None
+        self.root.geometry("900x550")
+
+        self.store = RecipeStore()
+        self.ingredients_buffer: list[Ingredient] = []
 
         self._build_layout()
         self._refresh_recipe_list()
@@ -123,6 +132,22 @@ class RecipeApp:
         self.ing_name = ttk.Entry(self.left_group)
         self.ing_amount = ttk.Entry(self.left_group)
         self.ing_unit = ttk.Entry(self.left_group)
+        left = ttk.LabelFrame(container, text="Ny oppskrift", padding=10)
+        right = ttk.LabelFrame(container, text="Bruk oppskrift", padding=10)
+        left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 8))
+        right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        ttk.Label(left, text="Navn på rett").grid(row=0, column=0, sticky="w")
+        self.recipe_name = ttk.Entry(left, width=40)
+        self.recipe_name.grid(row=1, column=0, columnspan=3, sticky="ew", pady=(0, 8))
+
+        ttk.Label(left, text="Ingrediens").grid(row=2, column=0, sticky="w")
+        ttk.Label(left, text="Mengde").grid(row=2, column=1, sticky="w")
+        ttk.Label(left, text="Enhet").grid(row=2, column=2, sticky="w")
+
+        self.ing_name = ttk.Entry(left)
+        self.ing_amount = ttk.Entry(left)
+        self.ing_unit = ttk.Entry(left)
         self.ing_name.grid(row=3, column=0, sticky="ew", padx=(0, 5))
         self.ing_amount.grid(row=3, column=1, sticky="ew", padx=(0, 5))
         self.ing_unit.grid(row=3, column=2, sticky="ew")
@@ -150,6 +175,26 @@ class RecipeApp:
         self.left_group.columnconfigure(2, weight=1)
         self.left_group.rowconfigure(5, weight=1)
         self.left_group.rowconfigure(7, weight=1)
+        ttk.Button(left, text="Legg til ingrediens", command=self.add_ingredient).grid(
+            row=4, column=0, columnspan=3, sticky="ew", pady=8
+        )
+
+        self.ing_list = tk.Listbox(left, height=8)
+        self.ing_list.grid(row=5, column=0, columnspan=3, sticky="nsew")
+
+        ttk.Label(left, text="Instruksjoner").grid(row=6, column=0, columnspan=3, sticky="w", pady=(8, 0))
+        self.instructions = tk.Text(left, height=8)
+        self.instructions.grid(row=7, column=0, columnspan=3, sticky="nsew", pady=(0, 8))
+
+        ttk.Button(left, text="Lagre oppskrift", command=self.save_recipe).grid(
+            row=8, column=0, columnspan=3, sticky="ew"
+        )
+
+        left.columnconfigure(0, weight=2)
+        left.columnconfigure(1, weight=1)
+        left.columnconfigure(2, weight=1)
+        left.rowconfigure(5, weight=1)
+        left.rowconfigure(7, weight=1)
 
         ttk.Label(right, text="Velg oppskrift").grid(row=0, column=0, sticky="w")
         self.recipe_combo = ttk.Combobox(right, state="readonly")
@@ -183,6 +228,23 @@ class RecipeApp:
 
         right.columnconfigure(0, weight=1)
         right.rowconfigure(9, weight=1)
+        ttk.Label(right, text="Ingrediens som styrer skalering").grid(row=2, column=0, sticky="w")
+        self.reference_combo = ttk.Combobox(right, state="readonly")
+        self.reference_combo.grid(row=3, column=0, sticky="ew", pady=(0, 8))
+
+        ttk.Label(right, text="Ny mengde for valgt ingrediens").grid(row=4, column=0, sticky="w")
+        self.new_amount = ttk.Entry(right)
+        self.new_amount.grid(row=5, column=0, sticky="ew", pady=(0, 8))
+
+        ttk.Button(right, text="Beregn nye mengder", command=self.recalculate).grid(
+            row=6, column=0, sticky="ew", pady=(0, 8)
+        )
+
+        self.output = tk.Text(right, height=18)
+        self.output.grid(row=7, column=0, sticky="nsew")
+
+        right.columnconfigure(0, weight=1)
+        right.rowconfigure(7, weight=1)
 
     def add_ingredient(self) -> None:
         name = self.ing_name.get().strip()
@@ -247,52 +309,12 @@ class RecipeApp:
         self.ing_list.delete(0, tk.END)
         self.ingredients_buffer = []
 
-    def _set_edit_mode(self, original_name: str | None) -> None:
-        self.editing_original_name = original_name
-        if original_name is None:
-            self.left_group.configure(text="Ny oppskrift")
-            self.save_button.configure(text="Lagre oppskrift")
-            self.cancel_edit_button.configure(state=tk.DISABLED)
-        else:
-            self.left_group.configure(text=f"Rediger oppskrift: {original_name}")
-            self.save_button.configure(text="Oppdater oppskrift")
-            self.cancel_edit_button.configure(state=tk.NORMAL)
-
-    def cancel_edit(self) -> None:
-        self._clear_create_form()
-        self._set_edit_mode(None)
-
-    def load_selected_for_edit(self) -> None:
-        recipe = self._selected_recipe()
-        if recipe is None:
-            messagebox.showerror("Ingen valgt", "Velg en oppskrift først.")
-            return
-
-        self._clear_create_form()
-        self._set_edit_mode(recipe.name)
-
-        self.recipe_name.insert(0, recipe.name)
-        self.instructions.insert("1.0", recipe.instructions)
-        for ing in recipe.ingredients:
-            copy_ing = Ingredient(name=ing.name, amount=ing.amount, unit=ing.unit)
-            self.ingredients_buffer.append(copy_ing)
-            self.ing_list.insert(tk.END, f"{copy_ing.name}: {copy_ing.amount:g} {copy_ing.unit}".strip())
-
-    def _refresh_recipe_list(self, select_name: str | None = None) -> None:
+    def _refresh_recipe_list(self) -> None:
         names = [recipe.name for recipe in self.store.recipes]
         self.recipe_combo["values"] = names
-        if not names:
-            self.output.delete("1.0", tk.END)
-            self.reference_combo["values"] = []
-            return
-
-        if select_name and select_name in names:
-            self.recipe_combo.current(names.index(select_name))
-        elif self.recipe_combo.get() in names:
-            self.recipe_combo.current(names.index(self.recipe_combo.get()))
-        else:
+        if names:
             self.recipe_combo.current(0)
-        self.show_recipe()
+            self.show_recipe()
 
     def _selected_recipe(self) -> Recipe | None:
         selected_name = self.recipe_combo.get()
@@ -300,22 +322,6 @@ class RecipeApp:
             if recipe.name == selected_name:
                 return recipe
         return None
-
-    def _build_recipe_text(self, recipe: Recipe) -> str:
-        lines = [f"Oppskrift: {recipe.name}", "", "Ingredienser:"]
-        for ing in recipe.ingredients:
-            lines.append(f"- {ing.name}: {ing.amount:g} {ing.unit}".strip())
-        lines.extend(["", "Instruksjoner:", recipe.instructions or "(ingen)"])
-        return "\n".join(lines)
-
-    def _current_output_text(self) -> str:
-        text = self.output.get("1.0", tk.END).strip()
-        if text:
-            return text
-        recipe = self._selected_recipe()
-        if recipe is None:
-            return ""
-        return self._build_recipe_text(recipe)
 
     def show_recipe(self) -> None:
         recipe = self._selected_recipe()
@@ -326,8 +332,15 @@ class RecipeApp:
         if recipe.ingredients:
             self.reference_combo.current(0)
 
+        lines = [f"Oppskrift: {recipe.name}\n", "Ingredienser:"]
+        for ing in recipe.ingredients:
+            lines.append(f"- {ing.name}: {ing.amount:g} {ing.unit}".strip())
+
+        lines.append("\nInstruksjoner:")
+        lines.append(recipe.instructions or "(ingen)")
+
         self.output.delete("1.0", tk.END)
-        self.output.insert(tk.END, self._build_recipe_text(recipe))
+        self.output.insert(tk.END, "\n".join(lines))
 
     def recalculate(self) -> None:
         recipe = self._selected_recipe()
