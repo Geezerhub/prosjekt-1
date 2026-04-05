@@ -65,7 +65,7 @@ Når du har valgt eller skalert en oppskrift i appen:
 
 - Klikk **Lagre som .txt** for å dele som tekstfil.
 - Klikk **Lagre som .pdf** for å dele som PDF.
-- Klikk **Skriv ut** for å sende til standardskriver i Windows.
+- Klikk **Skriv ut** for å åpne Windows skrivervalg og velge printer før utskrift.
 
 ## Desktop-ikon på Windows
 

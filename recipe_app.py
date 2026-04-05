@@ -507,15 +507,28 @@ class RecipeApp:
         try:
             escaped_path = temp_path.replace("'", "''")
             ps_command = (
-                "$p = Start-Process -FilePath notepad.exe -ArgumentList '" + escaped_path + "' -PassThru; "
-                "Start-Sleep -Milliseconds 600; "
-                "Add-Type -AssemblyName Microsoft.VisualBasic; "
                 "Add-Type -AssemblyName System.Windows.Forms; "
-                "[Microsoft.VisualBasic.Interaction]::AppActivate($p.Id) | Out-Null; "
-                "[System.Windows.Forms.SendKeys]::SendWait('^p')"
+                "$pd = New-Object System.Windows.Forms.PrintDialog; "
+                "$pd.AllowSomePages = $false; "
+                "$pd.UseEXDialog = $true; "
+                "if ($pd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { "
+                "  Start-Process -FilePath notepad.exe -ArgumentList '/pt', '" + escaped_path + "', $pd.PrinterSettings.PrinterName; "
+                "  exit 0 "
+                "} else { exit 2 }"
             )
-            subprocess.Popen(["powershell", "-NoProfile", "-Command", ps_command])
-            messagebox.showinfo("Utskrift", "Windows utskriftsvindu åpnes. Velg skriver og bekreft utskrift der.")
+            result = subprocess.run(
+                ["powershell", "-NoProfile", "-STA", "-Command", ps_command],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if result.returncode == 0:
+                messagebox.showinfo("Utskrift", "Utskrift sendt til valgt skriver i Windows-dialogen.")
+            elif result.returncode == 2:
+                messagebox.showinfo("Utskrift", "Utskrift ble avbrutt.")
+            else:
+                error_text = (result.stderr or result.stdout or "Ukjent feil").strip()
+                messagebox.showerror("Utskriftsfeil", f"Kunne ikke starte utskrift: {error_text}")
         except OSError as error:
             messagebox.showerror("Utskriftsfeil", f"Kunne ikke starte utskrift: {error}")
 
