@@ -51,7 +51,7 @@ py recipe_app.py
 
 ## Innstillinger (i programvinduet)
 
-I høyre del av appen finnes en modul som heter **Innstillinger**. Her kan du:
+Klikk **Innstillinger**-knappen i høyre del av appen for å åpne innstillingsvinduet. Der kan du:
 
 1. Definere enheter som ikke skal skaleres (kommaseparert, f.eks. `knep, dæsj`).
 2. Velge mappe (path) der `recipes.json` lagres.

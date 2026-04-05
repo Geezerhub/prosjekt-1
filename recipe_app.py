@@ -227,8 +227,13 @@ class RecipeApp:
         self.recipe_combo.grid(row=1, column=0, sticky="ew", pady=(0, 8))
         self.recipe_combo.bind("<<ComboboxSelected>>", lambda _e: self.show_recipe())
 
-        ttk.Button(right, text="Rediger valgt oppskrift", command=self.load_selected_for_edit).grid(
-            row=2, column=0, sticky="ew", pady=(0, 8)
+        actions_row = ttk.Frame(right)
+        actions_row.grid(row=2, column=0, sticky="ew", pady=(0, 8))
+        ttk.Button(actions_row, text="Rediger valgt oppskrift", command=self.load_selected_for_edit).pack(
+            side=tk.LEFT, fill=tk.X, expand=True
+        )
+        ttk.Button(actions_row, text="Innstillinger", command=self._open_settings_window).pack(
+            side=tk.LEFT, fill=tk.X, expand=True, padx=(6, 0)
         )
 
         ttk.Label(right, text="Ingrediens som styrer skalering").grid(row=3, column=0, sticky="w")
@@ -249,30 +254,6 @@ class RecipeApp:
 
         self.output = tk.Text(right, height=18)
         self.output.grid(row=9, column=0, sticky="nsew")
-
-        settings_group = ttk.LabelFrame(right, text="Innstillinger", padding=8)
-        settings_group.grid(row=10, column=0, sticky="ew", pady=(8, 0))
-
-        ttk.Label(settings_group, text="Enheter som ikke skaleres (kommaseparert)").grid(
-            row=0, column=0, columnspan=2, sticky="w"
-        )
-        self.non_scaling_units_entry = ttk.Entry(settings_group)
-        self.non_scaling_units_entry.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(2, 8))
-        self.non_scaling_units_entry.insert(0, ", ".join(sorted(self.non_scaling_units)))
-
-        ttk.Label(settings_group, text="Mappe for lagrede oppskrifter").grid(row=2, column=0, columnspan=2, sticky="w")
-        self.recipe_folder_entry = ttk.Entry(settings_group)
-        self.recipe_folder_entry.grid(row=3, column=0, sticky="ew", pady=(2, 8))
-        self.recipe_folder_entry.insert(0, self.settings.recipe_folder)
-        ttk.Button(settings_group, text="Velg mappe", command=self._choose_recipe_folder).grid(
-            row=3, column=1, sticky="ew", padx=(6, 0)
-        )
-
-        ttk.Button(settings_group, text="Lagre innstillinger", command=self._apply_settings).grid(
-            row=4, column=0, columnspan=2, sticky="ew"
-        )
-        settings_group.columnconfigure(0, weight=1)
-        settings_group.columnconfigure(1, weight=0)
 
         right.columnconfigure(0, weight=1)
         right.rowconfigure(9, weight=1)
@@ -328,20 +309,54 @@ class RecipeApp:
 
         return "break"
 
-    def _choose_recipe_folder(self) -> None:
-        selected = filedialog.askdirectory(initialdir=self.recipe_folder_entry.get().strip() or self.settings.recipe_folder)
-        if selected:
-            self.recipe_folder_entry.delete(0, tk.END)
-            self.recipe_folder_entry.insert(0, selected)
+    def _open_settings_window(self) -> None:
+        window = tk.Toplevel(self.root)
+        window.title("Innstillinger")
+        window.geometry("540x220")
+        window.transient(self.root)
+        window.grab_set()
 
-    def _apply_settings(self) -> None:
-        raw_units = self.non_scaling_units_entry.get().strip()
+        frame = ttk.Frame(window, padding=12)
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frame, text="Enheter som ikke skaleres (kommaseparert)").grid(row=0, column=0, columnspan=2, sticky="w")
+        units_entry = ttk.Entry(frame)
+        units_entry.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(2, 10))
+        units_entry.insert(0, ", ".join(sorted(self.non_scaling_units)))
+
+        ttk.Label(frame, text="Mappe for lagrede oppskrifter").grid(row=2, column=0, columnspan=2, sticky="w")
+        folder_entry = ttk.Entry(frame)
+        folder_entry.grid(row=3, column=0, sticky="ew", pady=(2, 10))
+        folder_entry.insert(0, self.settings.recipe_folder)
+        ttk.Button(
+            frame,
+            text="Velg mappe",
+            command=lambda: self._choose_recipe_folder(folder_entry),
+        ).grid(row=3, column=1, sticky="ew", padx=(6, 0))
+
+        ttk.Button(
+            frame,
+            text="Lagre innstillinger",
+            command=lambda: self._apply_settings(units_entry.get(), folder_entry.get(), window),
+        ).grid(row=4, column=0, columnspan=2, sticky="ew")
+
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=0)
+
+    def _choose_recipe_folder(self, target_entry: ttk.Entry) -> None:
+        selected = filedialog.askdirectory(initialdir=target_entry.get().strip() or self.settings.recipe_folder)
+        if selected:
+            target_entry.delete(0, tk.END)
+            target_entry.insert(0, selected)
+
+    def _apply_settings(self, raw_units: str, folder_text: str, window: tk.Toplevel | None = None) -> None:
+        raw_units = raw_units.strip()
         parsed_units = {part.strip().lower().rstrip(".") for part in raw_units.split(",") if part.strip()}
         if not parsed_units:
             messagebox.showerror("Ugyldige enheter", "Legg inn minst én enhet som ikke skal skaleres.")
             return
 
-        folder_text = self.recipe_folder_entry.get().strip()
+        folder_text = folder_text.strip()
         if not folder_text:
             messagebox.showerror("Ugyldig mappe", "Velg en mappe for lagrede oppskrifter.")
             return
@@ -364,12 +379,9 @@ class RecipeApp:
             messagebox.showerror("Lagringsfeil", f"Kunne ikke lagre innstillinger: {error}")
             return
 
-        self.non_scaling_units_entry.delete(0, tk.END)
-        self.non_scaling_units_entry.insert(0, ", ".join(sorted(self.non_scaling_units)))
-        self.recipe_folder_entry.delete(0, tk.END)
-        self.recipe_folder_entry.insert(0, self.settings.recipe_folder)
-
         self._refresh_recipe_list(select_name=previous_recipe_name or None)
+        if window is not None and window.winfo_exists():
+            window.destroy()
         messagebox.showinfo("Innstillinger lagret", "Innstillingene ble oppdatert.")
 
     def save_recipe(self) -> None:
