@@ -1,14 +1,13 @@
-import html
 import json
 import os
 import tempfile
 import tkinter as tk
-import webbrowser
 from json import JSONDecodeError
 from dataclasses import dataclass, asdict
 from pathlib import Path
-from tkinter import messagebox, ttk
+from tkinter import filedialog, messagebox, ttk
 
+from export_utils import write_simple_text_pdf
 from recipe_logic import IngredientAmount, scale_ingredients
 
 
@@ -164,13 +163,9 @@ class RecipeApp:
         self.ing_name = ttk.Entry(self.left_group)
         self.ing_amount = ttk.Entry(self.left_group)
         self.ing_unit = ttk.Entry(self.left_group)
-        self.ing_unit.bind("<FocusIn>", self._select_unit_text)
         self.ing_name.grid(row=3, column=0, sticky="ew", padx=(0, 5))
         self.ing_amount.grid(row=3, column=1, sticky="ew", padx=(0, 5))
         self.ing_unit.grid(row=3, column=2, sticky="ew")
-        for entry in (self.ing_name, self.ing_amount, self.ing_unit):
-            entry.bind("<Return>", self._add_ingredient_from_enter)
-            entry.bind("<KP_Enter>", self._add_ingredient_from_enter)
 
         ttk.Button(self.left_group, text="Legg til ingrediens", command=self.add_ingredient).grid(
             row=4, column=0, columnspan=3, sticky="ew", pady=8
@@ -219,6 +214,8 @@ class RecipeApp:
 
         export_row = ttk.Frame(right)
         export_row.grid(row=8, column=0, sticky="ew", pady=(0, 8))
+        ttk.Button(export_row, text="Lagre som .txt", command=self.export_txt).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Button(export_row, text="Lagre som .pdf", command=self.export_pdf).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=6)
         ttk.Button(export_row, text="Skriv ut", command=self.print_current).pack(side=tk.LEFT, fill=tk.X, expand=True)
 
         self.output = tk.Text(right, height=18)
@@ -226,13 +223,6 @@ class RecipeApp:
 
         right.columnconfigure(0, weight=1)
         right.rowconfigure(9, weight=1)
-
-        self.root.bind_all("<Return>", self._on_enter_pressed, add="+")
-        self.root.bind_all("<KP_Enter>", self._on_enter_pressed, add="+")
-
-    def _add_ingredient_from_enter(self, _event: tk.Event) -> str:
-        self.add_ingredient()
-        return "break"
 
     def add_ingredient(self) -> None:
         name = self.ing_name.get().strip()
@@ -253,30 +243,7 @@ class RecipeApp:
 
         self.ing_name.delete(0, tk.END)
         self.ing_amount.delete(0, tk.END)
-        self.ing_name.focus_set()
-        self.ing_name.selection_range(0, tk.END)
-
-    def _select_unit_text(self, _event: tk.Event) -> None:
-        self.ing_unit.selection_range(0, tk.END)
-
-    def _on_enter_pressed(self, _event: tk.Event) -> str | None:
-        focused_widget = self.root.focus_get()
-        if isinstance(focused_widget, tk.Text):
-            return None
-
-        target_widget = focused_widget
-        if target_widget is None:
-            pointer_x, pointer_y = self.root.winfo_pointerxy()
-            target_widget = self.root.winfo_containing(pointer_x, pointer_y)
-
-        if target_widget is None:
-            return None
-
-        target_widget.event_generate("<Button-1>")
-        if hasattr(target_widget, "invoke"):
-            target_widget.invoke()  # type: ignore[attr-defined]
-
-        return "break"
+        self.ing_unit.delete(0, tk.END)
 
     def save_recipe(self) -> None:
         name = self.recipe_name.get().strip()
@@ -452,31 +419,70 @@ class RecipeApp:
         self.output.delete("1.0", tk.END)
         self.output.insert(tk.END, "\n".join(updated_lines))
 
+    def export_txt(self) -> None:
+        content = self._current_output_text()
+        if not content:
+            messagebox.showerror("Ingen data", "Velg eller lag en oppskrift først.")
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".txt",
+            filetypes=[("Tekstfil", "*.txt")],
+            title="Lagre oppskrift som tekst",
+        )
+        if not file_path:
+            return
+
+        try:
+            Path(file_path).write_text(content, encoding="utf-8")
+        except OSError as error:
+            messagebox.showerror("Lagringsfeil", f"Kunne ikke lagre tekstfil: {error}")
+            return
+        messagebox.showinfo("Lagret", f"Oppskriften ble lagret som tekst:\n{file_path}")
+
+    def export_pdf(self) -> None:
+        content = self._current_output_text()
+        if not content:
+            messagebox.showerror("Ingen data", "Velg eller lag en oppskrift først.")
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".pdf",
+            filetypes=[("PDF", "*.pdf")],
+            title="Lagre oppskrift som PDF",
+        )
+        if not file_path:
+            return
+
+        try:
+            write_simple_text_pdf(content, Path(file_path), title="Oppskrift")
+        except OSError as error:
+            messagebox.showerror("Lagringsfeil", f"Kunne ikke lagre PDF: {error}")
+            return
+        messagebox.showinfo("Lagret", f"Oppskriften ble lagret som PDF:\n{file_path}")
+
     def print_current(self) -> None:
         content = self._current_output_text()
         if not content:
             messagebox.showerror("Ingen data", "Velg eller lag en oppskrift først.")
             return
 
-        with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, encoding="utf-8") as handle:
-            escaped_content = html.escape(content).replace("\n", "<br>")
-            handle.write(
-                "<html><head><meta charset='utf-8'><title>Oppskrift</title></head>"
-                "<body style='font-family:Segoe UI,Arial,sans-serif;padding:24px;'>"
-                f"<pre style='white-space:pre-wrap;font-size:16px;line-height:1.4'>{escaped_content}</pre>"
-                "<script>window.onload=function(){window.print();}</script>"
-                "</body></html>"
+        if os.name != "nt":
+            messagebox.showwarning(
+                "Kun Windows",
+                "Direkte utskrift støttes kun på Windows i denne versjonen. Bruk 'Lagre som .pdf' ellers.",
             )
+            return
+
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8") as handle:
+            handle.write(content)
             temp_path = handle.name
 
         try:
-            if os.name == "nt":
-                os.startfile(temp_path)
-            else:
-                webbrowser.open(f"file://{temp_path}")
-            messagebox.showinfo("Utskrift", "Utskriftsvinduet er åpnet. Velg skriver og trykk Skriv ut.")
+            os.startfile(temp_path, "print")
+            messagebox.showinfo("Utskrift sendt", "Oppskriften er sendt til standardskriveren i Windows.")
         except OSError as error:
-            messagebox.showerror("Utskriftsfeil", f"Kunne ikke åpne utskriftsvindu: {error}")
+            messagebox.showerror("Utskriftsfeil", f"Kunne ikke skrive ut: {error}")
 
 
 def main() -> None:
