@@ -191,6 +191,7 @@ class RecipeApp:
         self.ing_amount = ttk.Entry(self.left_group)
         self.ing_unit = ttk.Entry(self.left_group)
         self.ing_unit.bind("<FocusIn>", self._select_unit_text)
+        self.ing_unit.bind("<Button-1>", self._select_unit_text)
         self.ing_name.grid(row=3, column=0, sticky="ew", padx=(0, 5))
         self.ing_amount.grid(row=3, column=1, sticky="ew", padx=(0, 5))
         self.ing_unit.grid(row=3, column=2, sticky="ew")
@@ -198,7 +199,8 @@ class RecipeApp:
             entry.bind("<Return>", self._add_ingredient_from_enter)
             entry.bind("<KP_Enter>", self._add_ingredient_from_enter)
 
-        ttk.Button(self.left_group, text="Legg til ingrediens", command=self.add_ingredient).grid(
+        self.add_ingredient_button = ttk.Button(self.left_group, text="Legg til ingrediens", command=self.add_ingredient)
+        self.add_ingredient_button.grid(
             row=4, column=0, columnspan=3, sticky="ew", pady=8
         )
 
@@ -288,26 +290,18 @@ class RecipeApp:
         self.ing_name.selection_range(0, tk.END)
 
     def _select_unit_text(self, _event: tk.Event) -> None:
-        self.ing_unit.selection_range(0, tk.END)
+        self.root.after_idle(lambda: self.ing_unit.selection_range(0, tk.END))
 
     def _on_enter_pressed(self, _event: tk.Event) -> str | None:
         focused_widget = self.root.focus_get()
         if isinstance(focused_widget, tk.Text):
             return None
 
-        target_widget = focused_widget
-        if target_widget is None:
-            pointer_x, pointer_y = self.root.winfo_pointerxy()
-            target_widget = self.root.winfo_containing(pointer_x, pointer_y)
+        if hasattr(focused_widget, "invoke"):
+            focused_widget.invoke()  # type: ignore[attr-defined]
+            return "break"
 
-        if target_widget is None:
-            return None
-
-        target_widget.event_generate("<Button-1>")
-        if hasattr(target_widget, "invoke"):
-            target_widget.invoke()  # type: ignore[attr-defined]
-
-        return "break"
+        return None
 
     def _open_settings_window(self) -> None:
         window = tk.Toplevel(self.root)

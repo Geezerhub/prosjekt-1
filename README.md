@@ -61,7 +61,7 @@ Klikk **Innstillinger**-knappen i høyre del av appen for å åpne innstillingsv
 
 - Tips: Etter "Legg til ingrediens" (eller Enter/Numpad-Enter i ingrediensfeltene) hopper markøren tilbake til **Ingrediens** og feltet markeres, slik at du kan skrive direkte.
 - Feltet **Enhet** beholdes mellom ingredienser og markeres automatisk når feltet får fokus, så du enkelt kan overskrive.
-- I appen fungerer **Enter** som venstreklikk på valgt kontroll (unntatt i fritekstfeltet for instruksjoner).
+- I appen fungerer **Enter** som klikk for knappen som har fokus (unntatt i fritekstfeltet for instruksjoner).
 
 1. Velg oppskriften i listen til høyre.
 2. Klikk **Rediger valgt oppskrift**.
