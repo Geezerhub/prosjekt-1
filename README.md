@@ -75,14 +75,6 @@ Når du har valgt eller skalert en oppskrift i appen:
 
 - Klikk **Skriv ut** for å åpne Windows sitt utskriftsvindu (som i nettleser) for aktuell oppskrift, velg skriver og trykk **Skriv ut**.
 
-## Desktop-ikon på Windows
-
-For å lage et ikon på skrivebordet:
-
-1. Åpne prosjektmappen.
-2. Dobbeltklikk `create_desktop_icon.bat`.
-3. Du får en snarvei på skrivebordet som heter **Oppskriftsapp**.
-
 ## Vanlige problemer
 
 - **"python is not recognized"**

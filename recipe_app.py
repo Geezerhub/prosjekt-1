@@ -12,7 +12,6 @@ from recipe_logic import NON_SCALING_UNITS, IngredientAmount, scale_ingredients
 
 
 DATA_FILE = Path("recipes.json")
-ICON_FILE = Path("assets/app_icon.ppm")
 SETTINGS_FILE = Path("settings.json")
 
 
@@ -129,7 +128,6 @@ class RecipeApp:
         self.root = root
         self.root.title("Oppskriftsapp med forholdstall")
         self.root.geometry("950x650")
-        self._set_app_icon()
 
         self.settings = self._load_settings()
         self.non_scaling_units = {unit.lower() for unit in self.settings.non_scaling_units}
@@ -171,15 +169,6 @@ class RecipeApp:
         folder = Path(self.settings.recipe_folder).expanduser()
         folder.mkdir(parents=True, exist_ok=True)
         return folder / DATA_FILE.name
-
-    def _set_app_icon(self) -> None:
-        if ICON_FILE.exists():
-            try:
-                icon = tk.PhotoImage(file=str(ICON_FILE))
-                self.root.iconphoto(True, icon)
-                self.root._icon_ref = icon
-            except tk.TclError:
-                pass
 
     def _build_layout(self) -> None:
         container = ttk.Frame(self.root, padding=10)
