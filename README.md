@@ -6,10 +6,8 @@ En enkel desktop-app i Python/Tkinter der du kan:
 - Lagre oppskrifter lokalt i `recipes.json`.
 - Velge en ingrediens som referanse og angi ny mengde.
 - Få alle øvrige ingredienser automatisk skalert i samme forhold.
-- Enheter som **knep** og **dæsj** skaleres ikke automatisk når oppskriften justeres.
+- Eksportere oppskrift som `.txt` eller `.pdf`.
 - Skrive ut oppskrift direkte i Windows.
-- Egen modul **Innstillinger** i programvinduet.
-- Definere enheter som ikke skal skaleres og mappe for lagrede oppskrifter.
 
 ## Kom i gang (for nybegynnere på Windows)
 
@@ -49,19 +47,7 @@ Hvis `python` ikke virker, prøv:
 py recipe_app.py
 ```
 
-## Innstillinger (i programvinduet)
-
-Klikk **Innstillinger**-knappen i høyre del av appen for å åpne innstillingsvinduet. Der kan du:
-
-1. Definere enheter som ikke skal skaleres (kommaseparert, f.eks. `knep, dæsj`).
-2. Velge mappe (path) der `recipes.json` lagres.
-3. Trykke **Lagre innstillinger** for å aktivere endringene.
-
 ## Redigere tidligere lagrede oppskrifter
-
-- Tips: Etter "Legg til ingrediens" (eller Enter/Numpad-Enter i ingrediensfeltene) hopper markøren tilbake til **Ingrediens** og feltet markeres, slik at du kan skrive direkte.
-- Feltet **Enhet** beholdes mellom ingredienser og markeres automatisk når feltet får fokus, så du enkelt kan overskrive.
-- I appen fungerer **Enter** som klikk for knappen som har fokus (unntatt i fritekstfeltet for instruksjoner).
 
 1. Velg oppskriften i listen til høyre.
 2. Klikk **Rediger valgt oppskrift**.
@@ -69,11 +55,21 @@ Klikk **Innstillinger**-knappen i høyre del av appen for å åpne innstillingsv
 4. Endre navn, ingredienser eller instruksjoner.
 5. Klikk **Oppdater oppskrift** for å lagre endringene.
 
-## Utskrift
+## Utskrift og deling
 
 Når du har valgt eller skalert en oppskrift i appen:
 
-- Klikk **Skriv ut** for å åpne Windows sitt utskriftsvindu (som i nettleser) for aktuell oppskrift, velg skriver og trykk **Skriv ut**.
+- Klikk **Lagre som .txt** for å dele som tekstfil.
+- Klikk **Lagre som .pdf** for å dele som PDF.
+- Klikk **Skriv ut** for å sende til standardskriver i Windows.
+
+## Desktop-ikon på Windows
+
+For å lage et ikon på skrivebordet:
+
+1. Åpne prosjektmappen.
+2. Dobbeltklikk `create_desktop_icon.bat`.
+3. Du får en snarvei på skrivebordet som heter **Oppskriftsapp**.
 
 ## Vanlige problemer
 
@@ -85,6 +81,9 @@ Når du har valgt eller skalert en oppskrift i appen:
 
 - **Appen krasjer ved oppstart pga. lagret datafil**
   - Ny versjon tåler ødelagt `recipes.json` bedre og viser advarsel. Du kan også slette `recipes.json` i prosjektmappen og starte appen på nytt.
+
+- **Feil ved lagring som .txt/.pdf**
+  - Sjekk at du har skrivetilgang til mappen du prøver å lagre i (for eksempel ikke systemmapper).
 
 ## Tester (valgfritt)
 

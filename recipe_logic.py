@@ -8,19 +8,7 @@ class IngredientAmount:
     unit: str = ""
 
 
-NON_SCALING_UNITS = {"knep", "dæsj"}
-
-
-def _normalize_unit(unit: str) -> str:
-    return unit.strip().lower().rstrip(".")
-
-
-def scale_ingredients(
-    ingredients: list[IngredientAmount],
-    reference_name: str,
-    new_amount: float,
-    non_scaling_units: set[str] | None = None,
-) -> list[IngredientAmount]:
+def scale_ingredients(ingredients: list[IngredientAmount], reference_name: str, new_amount: float) -> list[IngredientAmount]:
     if not ingredients:
         raise ValueError("ingredients cannot be empty")
 
@@ -31,18 +19,4 @@ def scale_ingredients(
         raise ValueError("reference amount cannot be zero")
 
     factor = new_amount / reference.amount
-
-    resolved_non_scaling_units = {
-        _normalize_unit(unit) for unit in (non_scaling_units if non_scaling_units is not None else NON_SCALING_UNITS)
-    }
-
-    scaled_ingredients: list[IngredientAmount] = []
-    for ingredient in ingredients:
-        if _normalize_unit(ingredient.unit) in resolved_non_scaling_units:
-            scaled_amount = ingredient.amount
-        else:
-            scaled_amount = ingredient.amount * factor
-
-        scaled_ingredients.append(IngredientAmount(name=ingredient.name, amount=scaled_amount, unit=ingredient.unit))
-
-    return scaled_ingredients
+    return [IngredientAmount(name=i.name, amount=i.amount * factor, unit=i.unit) for i in ingredients]
