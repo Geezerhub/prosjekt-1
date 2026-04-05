@@ -6,7 +6,6 @@ En enkel desktop-app i Python/Tkinter der du kan:
 - Lagre oppskrifter lokalt i `recipes.json`.
 - Velge en ingrediens som referanse og angi ny mengde.
 - Få alle øvrige ingredienser automatisk skalert i samme forhold.
-- Enheter som **knep** og **dæsj** skaleres ikke automatisk når oppskriften justeres.
 - Eksportere oppskrift som `.txt` eller `.pdf`.
 - Skrive ut oppskrift direkte i Windows.
 
@@ -50,10 +49,6 @@ py recipe_app.py
 
 ## Redigere tidligere lagrede oppskrifter
 
-- Tips: Etter "Legg til ingrediens" (eller Enter i ingrediensfeltene) hopper markøren tilbake til **Ingrediens** og feltet markeres, slik at du kan skrive direkte.
-- Feltet **Enhet** beholdes mellom ingredienser og markeres automatisk når feltet får fokus, så du enkelt kan overskrive.
-- I appen fungerer **Enter** som venstreklikk på valgt kontroll (unntatt i fritekstfeltet for instruksjoner).
-
 1. Velg oppskriften i listen til høyre.
 2. Klikk **Rediger valgt oppskrift**.
 3. Nå fylles feltene på venstre side inn automatisk.
@@ -66,7 +61,7 @@ Når du har valgt eller skalert en oppskrift i appen:
 
 - Klikk **Lagre som .txt** for å dele som tekstfil.
 - Klikk **Lagre som .pdf** for å dele som PDF.
-- Klikk **Skriv ut** for å åpne Windows skrivervalg og velge printer før utskrift.
+- Klikk **Skriv ut** for å sende til standardskriver i Windows.
 
 ## Desktop-ikon på Windows
 

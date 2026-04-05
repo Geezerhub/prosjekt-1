@@ -1,7 +1,6 @@
 import json
 import os
 import tempfile
-import subprocess
 import tkinter as tk
 from json import JSONDecodeError
 from dataclasses import dataclass, asdict
@@ -164,7 +163,6 @@ class RecipeApp:
         self.ing_name = ttk.Entry(self.left_group)
         self.ing_amount = ttk.Entry(self.left_group)
         self.ing_unit = ttk.Entry(self.left_group)
-        self.ing_unit.bind("<FocusIn>", self._select_unit_text)
         self.ing_name.grid(row=3, column=0, sticky="ew", padx=(0, 5))
         self.ing_amount.grid(row=3, column=1, sticky="ew", padx=(0, 5))
         self.ing_unit.grid(row=3, column=2, sticky="ew")
@@ -226,8 +224,6 @@ class RecipeApp:
         right.columnconfigure(0, weight=1)
         right.rowconfigure(9, weight=1)
 
-        self.root.bind("<Return>", self._on_enter_pressed, add="+")
-
     def add_ingredient(self) -> None:
         name = self.ing_name.get().strip()
         unit = self.ing_unit.get().strip()
@@ -247,34 +243,7 @@ class RecipeApp:
 
         self.ing_name.delete(0, tk.END)
         self.ing_amount.delete(0, tk.END)
-        self.ing_name.focus_set()
-        self.ing_name.selection_range(0, tk.END)
-
-    def _select_unit_text(self, _event: tk.Event) -> None:
-        self.ing_unit.selection_range(0, tk.END)
-
-    def _on_enter_pressed(self, _event: tk.Event) -> str | None:
-        focused_widget = self.root.focus_get()
-        if isinstance(focused_widget, tk.Text):
-            return None
-
-        if focused_widget in {self.ing_name, self.ing_amount, self.ing_unit}:
-            self.add_ingredient()
-            return "break"
-
-        target_widget = focused_widget
-        if target_widget is None:
-            pointer_x, pointer_y = self.root.winfo_pointerxy()
-            target_widget = self.root.winfo_containing(pointer_x, pointer_y)
-
-        if target_widget is None:
-            return None
-
-        target_widget.event_generate("<Button-1>")
-        if hasattr(target_widget, "invoke"):
-            target_widget.invoke()  # type: ignore[attr-defined]
-
-        return "break"
+        self.ing_unit.delete(0, tk.END)
 
     def save_recipe(self) -> None:
         name = self.recipe_name.get().strip()
@@ -510,32 +479,10 @@ class RecipeApp:
             temp_path = handle.name
 
         try:
-            escaped_path = temp_path.replace("'", "''")
-            ps_command = (
-                "Add-Type -AssemblyName System.Windows.Forms; "
-                "$pd = New-Object System.Windows.Forms.PrintDialog; "
-                "$pd.AllowSomePages = $false; "
-                "$pd.UseEXDialog = $true; "
-                "if ($pd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { "
-                "  Start-Process -FilePath notepad.exe -ArgumentList '/pt', '" + escaped_path + "', $pd.PrinterSettings.PrinterName; "
-                "  exit 0 "
-                "} else { exit 2 }"
-            )
-            result = subprocess.run(
-                ["powershell", "-NoProfile", "-STA", "-Command", ps_command],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if result.returncode == 0:
-                messagebox.showinfo("Utskrift", "Utskrift sendt til valgt skriver i Windows-dialogen.")
-            elif result.returncode == 2:
-                messagebox.showinfo("Utskrift", "Utskrift ble avbrutt.")
-            else:
-                error_text = (result.stderr or result.stdout or "Ukjent feil").strip()
-                messagebox.showerror("Utskriftsfeil", f"Kunne ikke starte utskrift: {error_text}")
+            os.startfile(temp_path, "print")
+            messagebox.showinfo("Utskrift sendt", "Oppskriften er sendt til standardskriveren i Windows.")
         except OSError as error:
-            messagebox.showerror("Utskriftsfeil", f"Kunne ikke starte utskrift: {error}")
+            messagebox.showerror("Utskriftsfeil", f"Kunne ikke skrive ut: {error}")
 
 
 def main() -> None:
