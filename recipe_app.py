@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import tempfile
 import tkinter as tk
 from dataclasses import asdict, dataclass
@@ -124,7 +125,7 @@ class RecipeStore:
 class RecipeApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
-        self.root.title("Oppskriftsapp med forholdstall")
+        self.root.title("What's cookin'")
         self.root.geometry("950x650")
 
         self.settings = self._load_settings()
@@ -323,6 +324,11 @@ class RecipeApp:
             text="Lagre innstillinger",
             command=lambda: self._apply_settings(units_entry.get(), folder_entry.get(), window),
         ).grid(row=4, column=0, columnspan=2, sticky="ew")
+        ttk.Button(
+            frame,
+            text="Avinstaller What's Cookin'",
+            command=self._confirm_uninstall,
+        ).grid(row=5, column=0, columnspan=2, sticky="ew", pady=(8, 0))
 
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=0)
@@ -366,6 +372,61 @@ class RecipeApp:
         if window is not None and window.winfo_exists():
             window.destroy()
         messagebox.showinfo("Innstillinger lagret", "Innstillingene ble oppdatert.")
+
+    def _confirm_uninstall(self) -> None:
+        confirmed = messagebox.askyesno(
+            "Avinstaller What's Cookin'",
+            "er du sikker på at du ønsker å avinstallere What's Cookin'?",
+        )
+        if not confirmed:
+            return
+        self._perform_uninstall()
+
+    def _perform_uninstall(self) -> None:
+        errors: list[str] = []
+
+        paths_to_remove = {
+            SETTINGS_FILE,
+            self._recipe_file_path(),
+        }
+
+        for path in paths_to_remove:
+            try:
+                if path.exists():
+                    path.unlink()
+            except OSError as error:
+                errors.append(f"{path}: {error}")
+
+        if errors:
+            messagebox.showerror(
+                "Avinstalleringsfeil",
+                "Kunne ikke fjerne alle filer:\n" + "\n".join(errors),
+            )
+            return
+
+        if getattr(sys, "frozen", False):
+            self._schedule_self_delete()
+            return
+
+        messagebox.showinfo("Avinstallert", "What's Cookin' er avinstallert.")
+        self.root.destroy()
+
+    def _schedule_self_delete(self) -> None:
+        exe_path = Path(sys.executable)
+        cmd_path = Path(tempfile.gettempdir()) / "whats_cookin_uninstall.cmd"
+        script = (
+            "@echo off\n"
+            "ping 127.0.0.1 -n 2 > nul\n"
+            f'del /f /q "{exe_path}"\n'
+            f'del /f /q "{cmd_path}"\n'
+        )
+        try:
+            cmd_path.write_text(script, encoding="utf-8")
+            os.startfile(str(cmd_path))
+            messagebox.showinfo("Avinstallerer", "What's Cookin' blir nå avinstallert.")
+            self.root.destroy()
+        except OSError as error:
+            messagebox.showerror("Avinstalleringsfeil", f"Kunne ikke fullføre avinstallering: {error}")
 
     def save_recipe(self) -> None:
         name = self.recipe_name.get().strip()

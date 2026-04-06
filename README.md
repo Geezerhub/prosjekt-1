@@ -57,6 +57,11 @@ Her kan du:
 1. Definere ikke-skalerbare enheter (kommaseparert).
 2. Velge mappe/path for oppskriftssamlingen.
 3. Lagre innstillingene.
+4. Avinstallere appen via **Avinstaller What's Cookin'**.
+
+Ved avinstallering får du bekreftelse med teksten:
+
+`er du sikker på at du ønsker å avinstallere What's Cookin'?`
 
 ## Redigere tidligere lagrede oppskrifter
 
@@ -92,3 +97,24 @@ Når du har valgt eller skalert en oppskrift i appen:
 ```bash
 python -m unittest discover -s tests
 ```
+
+
+## Bygg .exe (Windows)
+
+Programmet bygges som **What's cookin'** og får et kokkehatt-ikon (`chef_hat.ico`).
+
+1. Installer PyInstaller:
+
+```bash
+py -m pip install pyinstaller
+```
+
+2. Kjør byggeskriptet fra prosjektmappen:
+
+```bash
+py build_windows_exe.py
+```
+
+3. Ferdig fil ligger i `dist/What's cookin'.exe`.
+
+> Merk: `.exe`-bygg må kjøres på Windows.
