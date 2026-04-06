@@ -3,7 +3,9 @@ import os
 import sys
 import tempfile
 import tkinter as tk
+import webbrowser
 from dataclasses import asdict, dataclass
+from html import escape
 from json import JSONDecodeError
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
@@ -609,19 +611,39 @@ class RecipeApp:
             messagebox.showerror("Ingen data", "Velg eller lag en oppskrift først.")
             return
 
-        if os.name != "nt":
-            messagebox.showwarning("Kun Windows", "Direkte utskrift støttes kun på Windows.")
-            return
-
-        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8") as handle:
-            handle.write(content)
-            temp_path = handle.name
+        html_document = self._build_print_html(content)
+        with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, encoding="utf-8") as handle:
+            handle.write(html_document)
+            temp_path = Path(handle.name)
 
         try:
-            os.startfile(temp_path, "print")
-            messagebox.showinfo("Utskrift", "Oppskriften er sendt til standardskriveren.")
+            webbrowser.open(temp_path.as_uri())
+            messagebox.showinfo("Utskrift", "Utskriftsdialogen er åpnet. Velg skriver og innstillinger der.")
         except OSError as error:
-            messagebox.showerror("Utskriftsfeil", f"Kunne ikke starte utskrift: {error}")
+            messagebox.showerror("Utskriftsfeil", f"Kunne ikke åpne utskriftsdialog: {error}")
+
+    def _build_print_html(self, content: str) -> str:
+        escaped_content = escape(content)
+        return f"""<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8">
+  <title>What's Cookin' - Utskrift</title>
+  <style>
+    body {{
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 24px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }}
+  </style>
+</head>
+<body>{escaped_content}</body>
+<script>
+  window.addEventListener("load", () => window.print());
+</script>
+</html>
+"""
 
 
 def main() -> None:

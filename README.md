@@ -8,7 +8,7 @@ En enkel desktop-app i Python/Tkinter der du kan:
 - Få alle ingredienser automatisk skalert i samme forhold.
 - Definere enheter som ikke skal skaleres (f.eks. `knep`, `dæsj`).
 - Velge path/mappe for oppskriftssamlingen (`recipes.json`).
-- Skrive ut oppskrift direkte til standardskriver i Windows.
+- Åpne utskriftsdialog med valg av skriver og utskriftsinnstillinger.
 
 ## Kom i gang (for nybegynnere på Windows)
 
@@ -79,7 +79,7 @@ Ved avinstallering får du bekreftelse med teksten:
 
 Når du har valgt eller skalert en oppskrift i appen:
 
-- Klikk **Skriv ut** for å sende oppskriften direkte til standardskriver i Windows.
+- Klikk **Skriv ut** for å åpne utskriftsdialogen (med valg av skriver, sider, layout osv.).
 
 ## Vanlige problemer
 
@@ -99,7 +99,7 @@ python -m unittest discover -s tests
 ```
 
 
-## Bygg .exe (Windows)
+## Bygg installerbar .exe (Windows)
 
 Programmet bygges som **What's cookin'** og får et kokkehatt-ikon (`chef_hat.ico`).
 
@@ -109,12 +109,20 @@ Programmet bygges som **What's cookin'** og får et kokkehatt-ikon (`chef_hat.ic
 py -m pip install pyinstaller
 ```
 
-2. Kjør byggeskriptet fra prosjektmappen:
+2. Installer Inno Setup (for å lage installer med skrivebordssnarvei):
+
+- https://jrsoftware.org/isinfo.php
+
+3. Kjør byggeskriptet fra prosjektmappen:
 
 ```bash
 py build_windows_exe.py
 ```
 
-3. Ferdig fil ligger i `dist/What's cookin'.exe`.
+Skriptet gjør da:
 
-> Merk: `.exe`-bygg må kjøres på Windows.
+- bygger `dist/What's cookin'.exe` med PyInstaller
+- lager en installasjonspakke `dist/What's_Cookin_Setup.exe`
+- installasjonspakken oppretter desktop-snarvei med kokkehatt-ikon
+
+> Merk: Installerbygg må kjøres på Windows.

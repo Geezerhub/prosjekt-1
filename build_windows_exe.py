@@ -1,21 +1,27 @@
-"""Build a Windows .exe for the Tkinter app using PyInstaller.
+"""Build a Windows .exe and installer for the Tkinter app.
 
 Usage (on Windows):
     py -m pip install pyinstaller
+    # Install Inno Setup so ISCC is available in PATH
     py build_windows_exe.py
 """
 
 from __future__ import annotations
 
 import os
+import shutil
 import struct
 import subprocess
 import sys
 from pathlib import Path
 
 APP_NAME = "What's cookin'"
+APP_VERSION = "1.0.0"
 ICON_FILE = Path("chef_hat.ico")
 ENTRYPOINT = Path("recipe_app.py")
+DIST_DIR = Path("dist")
+EXE_FILE = DIST_DIR / f"{APP_NAME}.exe"
+INNO_SCRIPT = Path("installer.iss")
 
 
 def _draw_circle(px: list[list[tuple[int, int, int, int]]], cx: int, cy: int, r: int, color: tuple[int, int, int, int]) -> None:
@@ -150,7 +156,59 @@ def main() -> int:
     ]
 
     print("Running:", " ".join(command))
-    return subprocess.call(command)
+    pyinstaller_exit = subprocess.call(command)
+    if pyinstaller_exit != 0:
+        return pyinstaller_exit
+
+    if not EXE_FILE.exists():
+        print(f"Could not find generated executable: {EXE_FILE}")
+        return 1
+
+    inno_compiler = shutil.which("ISCC")
+    if not inno_compiler:
+        print(
+            "Inno Setup compiler (ISCC) not found. Install Inno Setup and run this script again "
+            "to build an installable setup with desktop shortcut."
+        )
+        return 1
+
+    _write_inno_setup_script(INNO_SCRIPT, EXE_FILE, ICON_FILE)
+    installer_command = [inno_compiler, str(INNO_SCRIPT)]
+    print("Running:", " ".join(installer_command))
+    return subprocess.call(installer_command)
+
+
+def _write_inno_setup_script(script_path: Path, exe_path: Path, icon_path: Path) -> None:
+    app_id = "{{2B8D7138-F623-4A6B-B4F1-0EE26A9FA702}}"
+    script = f"""[Setup]
+AppId={app_id}
+AppName=What's Cookin'
+AppVersion={APP_VERSION}
+DefaultDirName={{autopf}}\\What's Cookin'
+DefaultGroupName=What's Cookin'
+DisableProgramGroupPage=yes
+OutputDir=dist
+OutputBaseFilename=What's_Cookin_Setup
+Compression=lzma
+SolidCompression=yes
+WizardStyle=modern
+UninstallDisplayIcon={{app}}\\chef_hat.ico
+
+[Languages]
+Name: "norwegian"; MessagesFile: "compiler:Languages\\Norwegian.isl"
+
+[Tasks]
+Name: "desktopicon"; Description: "Lag en snarvei på skrivebordet"; GroupDescription: "Ekstra oppgaver:"
+
+[Files]
+Source: "{exe_path.resolve()}"; DestDir: "{{app}}"; Flags: ignoreversion
+Source: "{icon_path.resolve()}"; DestDir: "{{app}}"; Flags: ignoreversion
+
+[Icons]
+Name: "{{autoprograms}}\\What's Cookin'"; Filename: "{{app}}\\{APP_NAME}.exe"; IconFilename: "{{app}}\\chef_hat.ico"
+Name: "{{autodesktop}}\\What's Cookin'"; Filename: "{{app}}\\{APP_NAME}.exe"; IconFilename: "{{app}}\\chef_hat.ico"; Tasks: desktopicon
+"""
+    script_path.write_text(script, encoding="utf-8")
 
 
 if __name__ == "__main__":
