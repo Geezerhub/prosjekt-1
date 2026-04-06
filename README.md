@@ -57,11 +57,7 @@ Her kan du:
 1. Definere ikke-skalerbare enheter (kommaseparert).
 2. Velge mappe/path for oppskriftssamlingen.
 3. Lagre innstillingene.
-4. Avinstallere appen via **Avinstaller What's Cookin'**.
-
-Ved avinstallering får du bekreftelse med teksten:
-
-`er du sikker på at du ønsker å avinstallere What's Cookin'?`
+4. Avslutte appen via **Avslutt What's Cookin'**.
 
 ## Redigere tidligere lagrede oppskrifter
 
@@ -98,31 +94,3 @@ Når du har valgt eller skalert en oppskrift i appen:
 python -m unittest discover -s tests
 ```
 
-
-## Bygg installerbar .exe (Windows)
-
-Programmet bygges som **What's cookin'** og får et kokkehatt-ikon (`chef_hat.ico`).
-
-1. Installer PyInstaller:
-
-```bash
-py -m pip install pyinstaller
-```
-
-2. Installer Inno Setup (for å lage installer med skrivebordssnarvei):
-
-- https://jrsoftware.org/isinfo.php
-
-3. Kjør byggeskriptet fra prosjektmappen:
-
-```bash
-py build_windows_exe.py
-```
-
-Skriptet gjør da:
-
-- bygger `dist/What's cookin'.exe` med PyInstaller
-- lager en installasjonspakke `dist/What's_Cookin_Setup.exe`
-- installasjonspakken oppretter desktop-snarvei med kokkehatt-ikon
-
-> Merk: Installerbygg må kjøres på Windows.
