@@ -61,7 +61,7 @@ Her kan du:
 
 Ved avinstallering får du bekreftelse med teksten:
 
-`er du sikker på at du ønsker å avinnstallere What's Cookin'?`
+`er du sikker på at du ønsker å avinstallere What's Cookin'?`
 
 ## Redigere tidligere lagrede oppskrifter
 

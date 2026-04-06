@@ -376,7 +376,7 @@ class RecipeApp:
     def _confirm_uninstall(self) -> None:
         confirmed = messagebox.askyesno(
             "Avinstaller What's Cookin'",
-            "er du sikker på at du ønsker å avinnstallere What's Cookin'?",
+            "er du sikker på at du ønsker å avinstallere What's Cookin'?",
         )
         if not confirmed:
             return
