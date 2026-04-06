@@ -125,7 +125,7 @@ class RecipeStore:
 class RecipeApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
-        self.root.title("What's cookin'")
+        self.root.title("What's Cookin'")
         self.root.geometry("950x650")
 
         self.settings = self._load_settings()
