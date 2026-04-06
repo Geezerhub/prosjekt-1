@@ -2,17 +2,15 @@ import json
 import os
 import tempfile
 import tkinter as tk
+from dataclasses import asdict, dataclass
 from json import JSONDecodeError
-from dataclasses import dataclass, asdict
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import messagebox, ttk
 
-from export_utils import write_simple_text_pdf
 from recipe_logic import IngredientAmount, scale_ingredients
 
 
 DATA_FILE = Path("recipes.json")
-ICON_FILE = Path("assets/app_icon.ppm")
 
 
 @dataclass
@@ -77,15 +75,14 @@ class RecipeStore:
         self.load_error_message = None
 
     def save(self) -> None:
-        payload = []
-        for recipe in self.recipes:
-            payload.append(
-                {
-                    "name": recipe.name,
-                    "instructions": recipe.instructions,
-                    "ingredients": [asdict(ing) for ing in recipe.ingredients],
-                }
-            )
+        payload = [
+            {
+                "name": recipe.name,
+                "instructions": recipe.instructions,
+                "ingredients": [asdict(ing) for ing in recipe.ingredients],
+            }
+            for recipe in self.recipes
+        ]
         self.path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def find_index(self, name: str) -> int | None:
@@ -122,7 +119,6 @@ class RecipeApp:
         self.root = root
         self.root.title("Oppskriftsapp med forholdstall")
         self.root.geometry("950x650")
-        self._set_app_icon()
 
         self.store = RecipeStore()
         self.ingredients_buffer: list[Ingredient] = []
@@ -133,15 +129,6 @@ class RecipeApp:
 
         if self.store.load_error_message:
             messagebox.showwarning("Problem med lagret fil", self.store.load_error_message)
-
-    def _set_app_icon(self) -> None:
-        if ICON_FILE.exists():
-            try:
-                icon = tk.PhotoImage(file=str(ICON_FILE))
-                self.root.iconphoto(True, icon)
-                self.root._icon_ref = icon
-            except tk.TclError:
-                pass
 
     def _build_layout(self) -> None:
         container = ttk.Frame(self.root, padding=10)
@@ -163,13 +150,17 @@ class RecipeApp:
         self.ing_name = ttk.Entry(self.left_group)
         self.ing_amount = ttk.Entry(self.left_group)
         self.ing_unit = ttk.Entry(self.left_group)
+        self.ing_unit.bind("<FocusIn>", self._select_unit_text)
+        self.ing_unit.bind("<Button-1>", self._select_unit_text)
         self.ing_name.grid(row=3, column=0, sticky="ew", padx=(0, 5))
         self.ing_amount.grid(row=3, column=1, sticky="ew", padx=(0, 5))
         self.ing_unit.grid(row=3, column=2, sticky="ew")
+        for entry in (self.ing_name, self.ing_amount, self.ing_unit):
+            entry.bind("<Return>", self._add_ingredient_from_enter)
+            entry.bind("<KP_Enter>", self._add_ingredient_from_enter)
 
-        ttk.Button(self.left_group, text="Legg til ingrediens", command=self.add_ingredient).grid(
-            row=4, column=0, columnspan=3, sticky="ew", pady=8
-        )
+        self.add_ingredient_button = ttk.Button(self.left_group, text="Legg til ingrediens", command=self.add_ingredient)
+        self.add_ingredient_button.grid(row=4, column=0, columnspan=3, sticky="ew", pady=8)
 
         self.ing_list = tk.Listbox(self.left_group, height=8)
         self.ing_list.grid(row=5, column=0, columnspan=3, sticky="nsew")
@@ -212,17 +203,20 @@ class RecipeApp:
             row=7, column=0, sticky="ew", pady=(0, 8)
         )
 
-        export_row = ttk.Frame(right)
-        export_row.grid(row=8, column=0, sticky="ew", pady=(0, 8))
-        ttk.Button(export_row, text="Lagre som .txt", command=self.export_txt).pack(side=tk.LEFT, fill=tk.X, expand=True)
-        ttk.Button(export_row, text="Lagre som .pdf", command=self.export_pdf).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=6)
-        ttk.Button(export_row, text="Skriv ut", command=self.print_current).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        ttk.Button(right, text="Skriv ut", command=self.print_current).grid(row=8, column=0, sticky="ew", pady=(0, 8))
 
         self.output = tk.Text(right, height=18)
         self.output.grid(row=9, column=0, sticky="nsew")
 
         right.columnconfigure(0, weight=1)
         right.rowconfigure(9, weight=1)
+
+        self.root.bind_all("<Return>", self._on_enter_pressed, add="+")
+        self.root.bind_all("<KP_Enter>", self._on_enter_pressed, add="+")
+
+    def _add_ingredient_from_enter(self, _event: tk.Event) -> str:
+        self.add_ingredient()
+        return "break"
 
     def add_ingredient(self) -> None:
         name = self.ing_name.get().strip()
@@ -243,7 +237,22 @@ class RecipeApp:
 
         self.ing_name.delete(0, tk.END)
         self.ing_amount.delete(0, tk.END)
-        self.ing_unit.delete(0, tk.END)
+        self.ing_name.focus_set()
+        self.ing_name.selection_range(0, tk.END)
+
+    def _select_unit_text(self, _event: tk.Event) -> None:
+        self.root.after_idle(lambda: self.ing_unit.selection_range(0, tk.END))
+
+    def _on_enter_pressed(self, _event: tk.Event) -> str | None:
+        focused_widget = self.root.focus_get()
+        if isinstance(focused_widget, tk.Text):
+            return None
+
+        if hasattr(focused_widget, "invoke"):
+            focused_widget.invoke()  # type: ignore[attr-defined]
+            return "break"
+
+        return None
 
     def save_recipe(self) -> None:
         name = self.recipe_name.get().strip()
@@ -419,48 +428,6 @@ class RecipeApp:
         self.output.delete("1.0", tk.END)
         self.output.insert(tk.END, "\n".join(updated_lines))
 
-    def export_txt(self) -> None:
-        content = self._current_output_text()
-        if not content:
-            messagebox.showerror("Ingen data", "Velg eller lag en oppskrift først.")
-            return
-
-        file_path = filedialog.asksaveasfilename(
-            defaultextension=".txt",
-            filetypes=[("Tekstfil", "*.txt")],
-            title="Lagre oppskrift som tekst",
-        )
-        if not file_path:
-            return
-
-        try:
-            Path(file_path).write_text(content, encoding="utf-8")
-        except OSError as error:
-            messagebox.showerror("Lagringsfeil", f"Kunne ikke lagre tekstfil: {error}")
-            return
-        messagebox.showinfo("Lagret", f"Oppskriften ble lagret som tekst:\n{file_path}")
-
-    def export_pdf(self) -> None:
-        content = self._current_output_text()
-        if not content:
-            messagebox.showerror("Ingen data", "Velg eller lag en oppskrift først.")
-            return
-
-        file_path = filedialog.asksaveasfilename(
-            defaultextension=".pdf",
-            filetypes=[("PDF", "*.pdf")],
-            title="Lagre oppskrift som PDF",
-        )
-        if not file_path:
-            return
-
-        try:
-            write_simple_text_pdf(content, Path(file_path), title="Oppskrift")
-        except OSError as error:
-            messagebox.showerror("Lagringsfeil", f"Kunne ikke lagre PDF: {error}")
-            return
-        messagebox.showinfo("Lagret", f"Oppskriften ble lagret som PDF:\n{file_path}")
-
     def print_current(self) -> None:
         content = self._current_output_text()
         if not content:
@@ -468,10 +435,7 @@ class RecipeApp:
             return
 
         if os.name != "nt":
-            messagebox.showwarning(
-                "Kun Windows",
-                "Direkte utskrift støttes kun på Windows i denne versjonen. Bruk 'Lagre som .pdf' ellers.",
-            )
+            messagebox.showwarning("Kun Windows", "Direkte utskrift støttes kun på Windows.")
             return
 
         with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8") as handle:
@@ -480,9 +444,9 @@ class RecipeApp:
 
         try:
             os.startfile(temp_path, "print")
-            messagebox.showinfo("Utskrift sendt", "Oppskriften er sendt til standardskriveren i Windows.")
+            messagebox.showinfo("Utskrift", "Oppskriften er sendt til standardskriveren.")
         except OSError as error:
-            messagebox.showerror("Utskriftsfeil", f"Kunne ikke skrive ut: {error}")
+            messagebox.showerror("Utskriftsfeil", f"Kunne ikke starte utskrift: {error}")
 
 
 def main() -> None:
