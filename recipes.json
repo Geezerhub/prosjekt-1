@@ -1,0 +1,124 @@
+[
+  {
+    "name": "Tikka Masala",
+    "instructions": "Ta 1/4 til 1/3 av Tikka Masala paste og bland sammen med yoghurt og kylling, før steking.\n\nNår sausen er ferdig kan kuttet gressløk legges i og putre til mør. \n\nHa i evt. ovnsbakt paprika til slutt (stekt i olje på 180 grader).",
+    "ingredients": [
+      {
+        "name": "Kylling",
+        "amount": 900.0,
+        "unit": "gram"
+      },
+      {
+        "name": "Korianderfrø",
+        "amount": 4.0,
+        "unit": "gram"
+      },
+      {
+        "name": "Spisskummen",
+        "amount": 1.0,
+        "unit": "gram"
+      },
+      {
+        "name": "Hvitløk",
+        "amount": 7.0,
+        "unit": "fedd"
+      },
+      {
+        "name": "Ingefær, fersk",
+        "amount": 2.0,
+        "unit": "tommer"
+      },
+      {
+        "name": "Garam Masala",
+        "amount": 7.0,
+        "unit": "gram"
+      },
+      {
+        "name": "Gurkemeie",
+        "amount": 3.0,
+        "unit": "gram"
+      },
+      {
+        "name": "Chiliflak",
+        "amount": 1.0,
+        "unit": "knep"
+      },
+      {
+        "name": "Vann",
+        "amount": 1.0,
+        "unit": "liten mengde"
+      },
+      {
+        "name": "Rapsolje",
+        "amount": 1.0,
+        "unit": "liten mengde"
+      },
+      {
+        "name": "Yoghurt",
+        "amount": 250.0,
+        "unit": "gram"
+      },
+      {
+        "name": "Tomat, hermetisert",
+        "amount": 800.0,
+        "unit": "gram"
+      },
+      {
+        "name": "Løk",
+        "amount": 1.0,
+        "unit": "stk"
+      },
+      {
+        "name": "Smør",
+        "amount": 60.0,
+        "unit": "gram"
+      },
+      {
+        "name": "Paprika, krydder",
+        "amount": 7.0,
+        "unit": "gram"
+      },
+      {
+        "name": "Kremfløte",
+        "amount": 3.0,
+        "unit": "dl"
+      }
+    ]
+  },
+  {
+    "name": "Béchamel Saus",
+    "instructions": "Smøret skal kun smelte, ikke steke. \nSmør-og-mel blanding trenger ikke å steke lengre enn 2-3 minutter. \nHell hele mengden med kald melk i Roux'en. \nNår alle ingrediensene er blandet la kjelen stå på lav varme i ca. en halvtime.",
+    "ingredients": [
+      {
+        "name": "Smør",
+        "amount": 30.0,
+        "unit": "gram"
+      },
+      {
+        "name": "Mel",
+        "amount": 20.0,
+        "unit": "gram"
+      },
+      {
+        "name": "Melk",
+        "amount": 500.0,
+        "unit": "ml"
+      },
+      {
+        "name": "Laurbærblad",
+        "amount": 2.0,
+        "unit": "stk"
+      },
+      {
+        "name": "Hvit pepper",
+        "amount": 2.0,
+        "unit": "gram"
+      },
+      {
+        "name": "Muskat",
+        "amount": 2.0,
+        "unit": "gram"
+      }
+    ]
+  }
+]
