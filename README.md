@@ -6,6 +6,8 @@ En enkel desktop-app i Python/Tkinter der du kan:
 - Lagre oppskrifter lokalt i `recipes.json`.
 - Velge en ingrediens som referanse og angi ny mengde.
 - Få alle ingredienser automatisk skalert i samme forhold.
+- Definere enheter som ikke skal skaleres (f.eks. `knep`, `dæsj`).
+- Velge path/mappe for oppskriftssamlingen (`recipes.json`).
 - Skrive ut oppskrift direkte til standardskriver i Windows.
 
 ## Kom i gang (for nybegynnere på Windows)
@@ -45,6 +47,16 @@ Hvis `python` ikke virker, prøv:
 ```bash
 py recipe_app.py
 ```
+
+## Innstillinger
+
+Trykk på **Innstillinger**-knappen (over **Skriv ut**) i høyre del av vinduet.
+
+Her kan du:
+
+1. Definere ikke-skalerbare enheter (kommaseparert).
+2. Velge mappe/path for oppskriftssamlingen.
+3. Lagre innstillingene.
 
 ## Redigere tidligere lagrede oppskrifter
 

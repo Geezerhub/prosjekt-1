@@ -5,12 +5,13 @@ import tkinter as tk
 from dataclasses import asdict, dataclass
 from json import JSONDecodeError
 from pathlib import Path
-from tkinter import messagebox, ttk
+from tkinter import filedialog, messagebox, ttk
 
-from recipe_logic import IngredientAmount, scale_ingredients
+from recipe_logic import NON_SCALING_UNITS, IngredientAmount, scale_ingredients
 
 
 DATA_FILE = Path("recipes.json")
+SETTINGS_FILE = Path("settings.json")
 
 
 @dataclass
@@ -25,6 +26,12 @@ class Recipe:
     name: str
     instructions: str
     ingredients: list[Ingredient]
+
+
+@dataclass
+class AppSettings:
+    non_scaling_units: list[str]
+    recipe_folder: str
 
 
 class RecipeStore:
@@ -120,7 +127,9 @@ class RecipeApp:
         self.root.title("Oppskriftsapp med forholdstall")
         self.root.geometry("950x650")
 
-        self.store = RecipeStore()
+        self.settings = self._load_settings()
+        self.non_scaling_units = {unit.lower() for unit in self.settings.non_scaling_units}
+        self.store = RecipeStore(path=self._recipe_file_path())
         self.ingredients_buffer: list[Ingredient] = []
         self.editing_original_name: str | None = None
 
@@ -129,6 +138,35 @@ class RecipeApp:
 
         if self.store.load_error_message:
             messagebox.showwarning("Problem med lagret fil", self.store.load_error_message)
+
+    def _load_settings(self) -> AppSettings:
+        default_folder = str(DATA_FILE.parent.resolve())
+        defaults = AppSettings(non_scaling_units=sorted(NON_SCALING_UNITS), recipe_folder=default_folder)
+
+        if not SETTINGS_FILE.exists():
+            return defaults
+
+        try:
+            payload = json.loads(SETTINGS_FILE.read_text(encoding="utf-8"))
+            units = payload.get("non_scaling_units", defaults.non_scaling_units)
+            folder = payload.get("recipe_folder", defaults.recipe_folder)
+            parsed_units = [str(unit).strip() for unit in units if str(unit).strip()]
+            parsed_folder = str(folder).strip() or defaults.recipe_folder
+            return AppSettings(non_scaling_units=parsed_units or defaults.non_scaling_units, recipe_folder=parsed_folder)
+        except (OSError, JSONDecodeError, TypeError, ValueError):
+            return defaults
+
+    def _save_settings(self) -> None:
+        payload = {
+            "non_scaling_units": sorted(self.non_scaling_units),
+            "recipe_folder": self.settings.recipe_folder,
+        }
+        SETTINGS_FILE.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def _recipe_file_path(self) -> Path:
+        folder = Path(self.settings.recipe_folder).expanduser()
+        folder.mkdir(parents=True, exist_ok=True)
+        return folder / DATA_FILE.name
 
     def _build_layout(self) -> None:
         container = ttk.Frame(self.root, padding=10)
@@ -203,13 +241,16 @@ class RecipeApp:
             row=7, column=0, sticky="ew", pady=(0, 8)
         )
 
-        ttk.Button(right, text="Skriv ut", command=self.print_current).grid(row=8, column=0, sticky="ew", pady=(0, 8))
+        ttk.Button(right, text="Innstillinger", command=self._open_settings_window).grid(
+            row=8, column=0, sticky="ew", pady=(0, 8)
+        )
+        ttk.Button(right, text="Skriv ut", command=self.print_current).grid(row=9, column=0, sticky="ew", pady=(0, 8))
 
         self.output = tk.Text(right, height=18)
-        self.output.grid(row=9, column=0, sticky="nsew")
+        self.output.grid(row=10, column=0, sticky="nsew")
 
         right.columnconfigure(0, weight=1)
-        right.rowconfigure(9, weight=1)
+        right.rowconfigure(10, weight=1)
 
         self.root.bind_all("<Return>", self._on_enter_pressed, add="+")
         self.root.bind_all("<KP_Enter>", self._on_enter_pressed, add="+")
@@ -253,6 +294,78 @@ class RecipeApp:
             return "break"
 
         return None
+
+    def _open_settings_window(self) -> None:
+        window = tk.Toplevel(self.root)
+        window.title("Innstillinger")
+        window.geometry("560x220")
+        window.transient(self.root)
+        window.grab_set()
+
+        frame = ttk.Frame(window, padding=12)
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frame, text="Enheter som ikke skaleres (kommaseparert)").grid(row=0, column=0, columnspan=2, sticky="w")
+        units_entry = ttk.Entry(frame)
+        units_entry.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(2, 10))
+        units_entry.insert(0, ", ".join(sorted(self.non_scaling_units)))
+
+        ttk.Label(frame, text="Mappe for lagrede oppskrifter").grid(row=2, column=0, columnspan=2, sticky="w")
+        folder_entry = ttk.Entry(frame)
+        folder_entry.grid(row=3, column=0, sticky="ew", pady=(2, 10))
+        folder_entry.insert(0, self.settings.recipe_folder)
+        ttk.Button(frame, text="Velg mappe", command=lambda: self._choose_recipe_folder(folder_entry)).grid(
+            row=3, column=1, sticky="ew", padx=(6, 0)
+        )
+
+        ttk.Button(
+            frame,
+            text="Lagre innstillinger",
+            command=lambda: self._apply_settings(units_entry.get(), folder_entry.get(), window),
+        ).grid(row=4, column=0, columnspan=2, sticky="ew")
+
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=0)
+
+    def _choose_recipe_folder(self, target_entry: ttk.Entry) -> None:
+        selected = filedialog.askdirectory(initialdir=target_entry.get().strip() or self.settings.recipe_folder)
+        if selected:
+            target_entry.delete(0, tk.END)
+            target_entry.insert(0, selected)
+
+    def _apply_settings(self, raw_units: str, folder_text: str, window: tk.Toplevel | None = None) -> None:
+        parsed_units = {part.strip().lower().rstrip(".") for part in raw_units.split(",") if part.strip()}
+        if not parsed_units:
+            messagebox.showerror("Ugyldige enheter", "Legg inn minst én enhet som ikke skal skaleres.")
+            return
+
+        folder_text = folder_text.strip()
+        if not folder_text:
+            messagebox.showerror("Ugyldig mappe", "Velg en mappe for lagrede oppskrifter.")
+            return
+
+        folder_path = Path(folder_text).expanduser()
+        try:
+            folder_path.mkdir(parents=True, exist_ok=True)
+        except OSError as error:
+            messagebox.showerror("Mappefeil", f"Kunne ikke bruke mappen: {error}")
+            return
+
+        previous_recipe_name = self.recipe_combo.get()
+        self.non_scaling_units = parsed_units
+        self.settings = AppSettings(non_scaling_units=sorted(parsed_units), recipe_folder=str(folder_path))
+
+        try:
+            self._save_settings()
+            self.store = RecipeStore(path=self._recipe_file_path())
+        except OSError as error:
+            messagebox.showerror("Lagringsfeil", f"Kunne ikke lagre innstillinger: {error}")
+            return
+
+        self._refresh_recipe_list(select_name=previous_recipe_name or None)
+        if window is not None and window.winfo_exists():
+            window.destroy()
+        messagebox.showinfo("Innstillinger lagret", "Innstillingene ble oppdatert.")
 
     def save_recipe(self) -> None:
         name = self.recipe_name.get().strip()
@@ -409,6 +522,7 @@ class RecipeApp:
                 [IngredientAmount(name=i.name, amount=i.amount, unit=i.unit) for i in recipe.ingredients],
                 reference_name=reference.name,
                 new_amount=new_reference_amount,
+                non_scaling_units=self.non_scaling_units,
             )
         except ValueError as error:
             messagebox.showerror("Skaleringsfeil", str(error))
