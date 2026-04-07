@@ -1,6 +1,6 @@
 # Oppskriftsapp med forholdstall (Windows-vennlig)
 
-En enkel desktop-app i Python/Tkinter der du kan:
+En enkel desktop-app i Python der du kan:
 
 - Registrere oppskrifter med ingredienser, mengde, enhet og instruksjoner.
 - Lagre oppskrifter lokalt i `recipes.json`.
@@ -11,8 +11,6 @@ En enkel desktop-app i Python/Tkinter der du kan:
 - Åpne utskriftsdialog med valg av skriver og utskriftsinnstillinger.
 
 ## Kom i gang (for nybegynnere på Windows)
-
-Du trenger **ikke** kunne Git eller GitHub for å kjøre appen.
 
 ### 1) Installer Python
 
@@ -61,9 +59,7 @@ Her kan du:
 
 ## Redigere tidligere lagrede oppskrifter
 
-- Tips: Etter "Legg til ingrediens" (eller Enter/Numpad-Enter i ingrediensfeltene) hopper markøren tilbake til **Ingrediens** og feltet markeres, slik at du kan skrive direkte.
-- Feltet **Enhet** beholdes mellom ingredienser og markeres automatisk når feltet får fokus.
-- I appen fungerer **Enter** som klikk for knappen som har fokus (unntatt i fritekstfeltet for instruksjoner).
+- Tips: Lag en "snarvei" på skrivebordet ditt til recipe_app_start, og du kan bruke det inkluderte kokkehatt-bildet som ikon. 
 
 1. Velg oppskriften i listen til høyre.
 2. Klikk **Rediger valgt oppskrift**.
