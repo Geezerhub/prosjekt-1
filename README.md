@@ -45,6 +45,7 @@ Hvis `python` ikke virker, prøv:
 ```bash
 py recipe_app.py
 ```
+- Tips: Lag en "snarvei" på skrivebordet ditt til recipe_app_start, og du kan bruke det inkluderte kokkehatt-bildet som ikon. 
 
 ## Innstillinger
 
@@ -58,8 +59,6 @@ Her kan du:
 4. Avslutte appen via **Avslutt What's Cookin'**.
 
 ## Redigere tidligere lagrede oppskrifter
-
-- Tips: Lag en "snarvei" på skrivebordet ditt til recipe_app_start, og du kan bruke det inkluderte kokkehatt-bildet som ikon. 
 
 1. Velg oppskriften i listen til høyre.
 2. Klikk **Rediger valgt oppskrift**.
